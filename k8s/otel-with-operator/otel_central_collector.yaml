@@ -1,0 +1,43 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  config: |
+    receivers:
+      filelog:
+        include: [/var/log/*.log]
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
+
+    exporters:
+      logging:
+      otlphttp:
+        endpoint: http://loki.default:3100/loki/api/v1/push
+        tls:
+          insecure: true
+      otlp:
+        endpoint: "grafana-tempo.default:4317"
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [logging, otlp]
+        logs:
+          receivers: [filelog]
+          processors: []
+          exporters: [logging, otlphttp]

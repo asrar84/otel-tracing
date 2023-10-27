@@ -1,0 +1,23 @@
+server.port: 8080
+
+addressClient:
+  baseUrl: http://customer-service:8081
+
+customerClient:
+  baseUrl: http://customer-service:8081
+
+spring:
+  output:
+    ansi:
+      enabled: always
+  application:
+    name: api-service
+
+management:
+  endpoint:
+    beans:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: beans

@@ -1,0 +1,17 @@
+server.port: 8081
+
+spring:
+  output:
+    ansi:
+      enabled: always
+  application:
+    name: customer-service
+
+management:
+  endpoint:
+    beans:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: beans

@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: 'true'
+        sidecar.opentelemetry.io/inject: 'true'
+      labels:
+        app: customer-service
+    spec:
+      containers:
+        - name: customer-service-pod
+          image: "customer-service:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          env:
+#            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+#              value: "http://example-opentelemetry-collector:4317"
+#            - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+#              value: "http://example-opentelemetry-collector:4317"
+#            - name: OTEL_TRACES_EXPORTER
+#              value: otlp
+#            - name: OTEL_METRICS_EXPORTER
+#              value: none
+#            - name: OTEL_LOGS_EXPORTER
+#              value: otlp
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP

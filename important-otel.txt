@@ -1,0 +1,51 @@
+minikube start
+minikube dashboard --port=9898 --url=true
+eval $(minikube -p minikube docker-env)
+
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+kubectl create ns opentelemetry-operator-system
+helm install --namespace opentelemetry-operator-system  --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.certManager.autoGenerateCert=true opentelemetry-operator open-telemetry/opentelemetry-operator
+helm uninstall --namespace opentelemetry-operator-system  opentelemetry-operator
+
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+
+kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+kubectl apply -f k8s/otel-with-operator/cluster-admin-rbac.yaml
+kubectl apply -f k8s/otel-with-operator/otel_central_collector_contrib.yaml
+kubectl apply -f k8s/otel-with-operator/otel_central_collector.yaml
+kubectl apply -f k8s/otel-with-operator/otel-sidecar.yaml
+kubectl apply -f k8s/otel-with-operator/otel-instrumentation.yaml
+
+kubectl delete -f k8s/otel-with-operator/otel_central_collector_contrib.yaml
+kubectl delete -f k8s/otel-with-operator/otel_central_collector.yaml
+kubectl delete -f k8s/otel-with-operator/otel-sidecar.yaml
+kubectl delete -f k8s/otel-with-operator/otel-instrumentation.yaml
+kubectl delete -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+
+
+
+
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install grafana-tempo grafana/tempo
+helm install --values k8s/grafana/loki/values.yaml loki grafana/loki
+helm install grafana grafana/grafana
+
+kubectl port-forward service/grafana 8090:80
+
+
+
+docker build customer-service -t customer-service
+docker build api-service -t api-service
+kubectl apply -f k8s/api-service/deployment.yaml
+kubectl apply -f k8s/api-service/service.yaml
+kubectl apply -f k8s/customer-service/deployment.yaml
+kubectl apply -f k8s/customer-service/service.yaml
+
+kubectl scale deployment api-service --replicas=1
+kubectl scale deployment customer-service --replicas=1
+
+
+kubectl port-forward service/api-service 8070:8080
